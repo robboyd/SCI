@@ -71,65 +71,30 @@ calcSCI <- function(dat,
   
   for (i in 1: length(periods)) {
     
-    dat$Period <- ifelse(dat$year %in% periods[[i]], paste0("p", i), dat$Period)
+    dat$Period <- ifelse(dat$year %in% periods[[i]], i, dat$Period)
     
   }
-  
-  if (is.null(backgroundEnvDat)) {
     
-    plotDat <- lapply(unique(dat$identifier),
-                      function(x) { 
-                        pca <- stats::prcomp(dat[dat$identifier == x, envCols])
-                        scores <- pca$x
-                        data.frame(Period = dat$Period[dat$identifier == x],
-                                   identifier = x,
-                                   scores = scores,
-                                   xVar = summary(pca)$importance[2,xPC] * 100,
-                                   yVar = summary(pca)$importance[2,yPC] * 100)})
-    
-    plotDat <- do.call("rbind", plotDat)
-    
-  } else {
-    
-    plotDat <- lapply(unique(dat$identifier),
-                      function(x) { 
-                        pca <- stats::prcomp(backgroundEnvDat)
-                        pca2 <- stats::predict(pca, dat[dat$identifier == x, envCols])
-                        scores <- rbind(pca2, pca$x)
-                        data.frame(Period = c(dat$Period[dat$identifier == x], rep("background", nrow(backgroundEnvDat))),
-                                   identifier = x,
-                                   scores = scores,
-                                   xVar = summary(pca)$importance[2,xPC] * 100,
-                                   yVar = summary(pca)$importance[2,yPC] * 100)})
-    
-    plotDat <- do.call("rbind", plotDat)
-    
-  }
-  
-  if (!is.null(backgroundEnvDat)) {
-    
-    p <- ggplot2::ggplot(data = plotDat, ggplot2::aes(x = plotDat[, (2 + xPC)], y = plotDat[, (2+yPC)], 
-                                                      colour = Period, group = Period,
-                                                      fill = factor(ifelse(Period == "background", "background", "samples")))) + 
-      ggplot2::stat_ellipse(type = "norm", geom = "polygon", alpha = 0.25) +
-      ggplot2::scale_fill_manual(aesthetics = "fill", values = c("red", "white"))
-    
-  } else {
-    
-    p <- ggplot2::ggplot(data = plotDat, ggplot2::aes(x = plotDat[, (2 + xPC)], y = plotDat[, (2+yPC)], 
-                                                      colour = Period, group = Period)) + 
-      ggplot2::stat_ellipse(type = "norm") 
-    
-  } 
-  
-  p <- p + ggplot2::facet_wrap(~identifier) +
-    ggplot2::labs(x = paste0("PC", xPC, " (", round(plotDat$xVar[1], 2), "%)"),
-                  y = paste0("PC", yPC, " (", round(plotDat$yVar[1], 2), "%)"),
-                  fill = "") +
-    ggplot2::theme_linedraw()
-  
-  
-  return(list(data = plotDat,
-              plot = p))
+  out <- lapply(1:length(periods),
+                  function(x) {
+                    
+                    pDat <- dat[dat$Period == x, ]
+                    
+                    SCIs <- lapply(unique(pDat$species),
+                                   function(y) {
+                                     
+                                     data.frame(species = y,
+                                                period = x,
+                                                SCI = mean(raster::extract(envDat,
+                                                                           pDat[pDat$species == y, ]),
+                                                           na.rm = T))
+                                     
+                                   })
+                    
+                    do.call("rbind", SCIs)
+                    
+                  })
+
+  return(do.call("rbind", out))
   
 }

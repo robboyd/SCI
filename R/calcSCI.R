@@ -74,7 +74,15 @@ calcSCI <- function(dat,
   out <- lapply(1:length(periods),
                   function(x) {
                     
-                    eDat <- ifelse(raster::nlayers(envDat) != 1, envDat[[x]], envDat)
+                    if(raster::nlayers(envDat) != 1) {
+                      
+                      eDat <- envDat[[x]]
+                      
+                    } else {
+                      
+                      eDat <- envDat
+                      
+                    }
                     
                     pDat <- dat[dat$Period == x, ]
                     

@@ -35,6 +35,10 @@ calcSCI <- function(dat,
                     spatialUncertainty,
                     identifier)
   
+  if (raster::nlayers(envDat) > 1) print("More than one environmental layer provided. Each layer should correspond to one time period.")
+  
+  if (raster::nlayers(envDat) > 1 & raster::nlayers(envDat) != length(periods)) stop("If more than one environmental layer is provided, the number of layers must equal the number of time periods.")
+  
   if (any(is.na(dat$identifier))) stop("One or more NAs in the identifier field. NAs are not permitted.")
   
   if (!is.null(maxSpatUncertainty)) dat <- dat[!is.na(dat$spatialUncertainty) & dat$spatialUncertainty <= maxSpatUncertainty, ]
@@ -70,6 +74,8 @@ calcSCI <- function(dat,
   out <- lapply(1:length(periods),
                   function(x) {
                     
+                    eDat <- ifelse(raster::nlayers(envDat) != 1, envDat[[x]], envDat)
+                    
                     pDat <- dat[dat$Period == x, ]
                     
                     SCIs <- lapply(unique(pDat$species),
@@ -77,7 +83,7 @@ calcSCI <- function(dat,
                                      
                                      data.frame(species = y,
                                                 period = x,
-                                                SCI = mean(raster::extract(envDat,
+                                                SCI = mean(raster::extract(eDat,
                                                                            pDat[pDat$species == y, c("x", "y")]),
                                                            na.rm = T))
                                      

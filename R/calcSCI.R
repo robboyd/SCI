@@ -35,17 +35,15 @@ calcSCI <- function(dat,
                     spatialUncertainty,
                     identifier)
   
-  if (any(is.na(dat$identifier))) stop("One or more NAs in the identifier field. NAs are not permitted.")
+  if (raster::nlayers(envDat) > 1) print("More than one environmental layer provided. Each layer should correspond to one time period.")
   
-  if (nrow(envDat) != nrow(dat)) stop("nrow of environmental data does not equal nrow of species occurrence data.")
+  if (raster::nlayers(envDat) > 1 & raster::nlayers(envDat) != length(periods)) stop("If more than one environmental layer is provided, the number of layers must equal the number of time periods.")
+  
+  if (any(is.na(dat$identifier))) stop("One or more NAs in the identifier field. NAs are not permitted.")
   
   if (!is.null(maxSpatUncertainty)) dat <- dat[!is.na(dat$spatialUncertainty) & dat$spatialUncertainty <= maxSpatUncertainty, ]
   
   if (nrow(dat) == 0) stop("No records with with spatialUncertainty < maxSpatUncertainty")
-  
-  dat <- cbind(dat, envDat)
-  
-  envCols <- ((ncol(dat) - ncol(envDat)) + 1):ncol(dat)
   
   if (any(is.na(dat$year))) {
     
@@ -54,8 +52,6 @@ calcSCI <- function(dat,
     dat <- dat[-which(is.na(dat$year)), ]
     
   }
-  
-  if (any(is.na(dat[, envCols[1]]))) dat <- dat[-which(is.na(dat[, envCols[1]])), ]
   
   dat <- dat[order(dat$year), ]
   
@@ -78,6 +74,8 @@ calcSCI <- function(dat,
   out <- lapply(1:length(periods),
                   function(x) {
                     
+                    eDat <- ifelse(raster::nlayers(envDat) != 1, envDat[[x]], envDat)
+                    
                     pDat <- dat[dat$Period == x, ]
                     
                     SCIs <- lapply(unique(pDat$species),
@@ -85,8 +83,8 @@ calcSCI <- function(dat,
                                      
                                      data.frame(species = y,
                                                 period = x,
-                                                SCI = mean(raster::extract(envDat,
-                                                                           pDat[pDat$species == y, ]),
+                                                SCI = mean(raster::extract(eDat,
+                                                                           pDat[pDat$species == y, c("x", "y")]),
                                                            na.rm = T))
                                      
                                    })

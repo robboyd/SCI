@@ -11,7 +11,7 @@
 #' @param periods String. A list of time periods. For example, for two periods, the first spanning 1950 to 1990, and the second 1991 to 2019: periods = list(1950:1990, 1991:2019).
 #' @param envDat String. A raster where only one time period is considered, or a multilayer raster stack where there are multiple time periods. In the latter case, the number of layers in the stack must match the number of time periods. 
 #' @param maxSpatUncertainty Numeric. Maximum permitted spatial uncertainty. All records more uncertain than this value will be dropped. Units must match the units in your data.
-#' @return a list with two entries: 1) the PCA results with columns for period, identifier, scores.PC1,.. scores.PCn, xVar (proportion of variance explained by xPC) and yVar (as xVar but for yPC); and 2) the PCA plots.
+#' @return a dataframe with three columns: species, period and SCI.
 #' @export
 
 calcSCI <- function(dat,

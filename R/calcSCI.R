@@ -27,6 +27,8 @@ calcSCI <- function(dat,
   
   if (any(!(c(species, x, y, year, spatialUncertainty, identifier) %in% colnames(dat)))) stop("You have specified columns that don't exist in dat.")
   
+  if (!is.data.frame(dat)) stop("dat must be a dataframe")
+  
   dat <- createData(data = dat,
                     species,
                     x,
